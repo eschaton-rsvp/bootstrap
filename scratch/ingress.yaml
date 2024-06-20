@@ -1,0 +1,21 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kuard
+  namespace: default
+spec:
+  routes:
+  - kind: Rule
+    match: Host(`kuard.itscoming.run`)
+    priority: 10
+    services:
+    - kind: Service
+      name: kuard-service
+      namespace: default
+      passHostHeader: true
+      port: 80
+      responseForwarding:
+        flushInterval: 1ms
+      scheme: https
+  tls:
+    secretName: kuard-tls

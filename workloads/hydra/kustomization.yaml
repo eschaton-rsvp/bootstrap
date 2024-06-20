@@ -1,0 +1,210 @@
+namespace: hydra
+
+helmCharts:
+  - repo: https://k8s.ory.sh/helm/charts
+    name: hydra
+    valuesInline:
+      replicaCount: 1
+
+      image:
+        # -- ORY Hydra image
+        repository: oryd/hydra
+        # -- ORY Hydra version
+        tag: v2.0.3
+        # -- Image pull policy
+        pullPolicy: IfNotPresent
+
+      # -- Image pull secrets
+      imagePullSecrets: []
+      # Chart name override
+      nameOverride: "hydra"
+      # -- Full chart name override
+      fullnameOverride: "hydra"
+
+      # -- Pod priority
+      # https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+      # priorityClassName: ""
+
+      # -- Configures the Kubernetes service
+      service:
+        # -- Configures the Kubernetes service for the proxy port.
+        public:
+          # -- En-/disable the service
+          enabled: true
+          # -- The service type
+          type: ClusterIP
+          # -- The load balancer IP
+          loadBalancerIP: ""
+          # -- The service port
+          port: 4444
+          # -- The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio)
+          name: http
+          # -- If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
+          annotations:
+            kubernetes.io/ingress.class: nginx
+            kubernetes.io/tls-acme: "true"
+          labels: {}
+          #      If you do want to specify additional labels, uncomment the following
+          #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
+          #      e.g.  app: hydra
+        # -- Configures the Kubernetes service for the api port.
+        admin:
+          # -- En-/disable the service
+          enabled: true
+          # -- The service type
+          type: ClusterIP
+          # -- The load balancer IP
+          loadBalancerIP: ""
+          # -- The service port
+          port: 4445
+          # -- The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio)
+          name: http
+          # -- If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
+          annotations:
+            kubernetes.io/ingress.class: nginx
+            kubernetes.io/tls-acme: "true"
+          labels: {}
+          #      If you do want to specify additional labels, uncomment the following
+          #      lines, adjust them as necessary, and remove the curly braces after 'labels:'.
+          #      e.g.  app: hydra
+          # -- Path to the metrics endpoint
+          metricsPath: /admin/metrics/prometheus
+
+      secret:
+        # -- switch to false to prevent creating the secret
+        enabled: true
+        # -- Provide custom name of existing secret, or custom name of secret to be created
+        nameOverride: "hydra"
+        # nameOverride: "myCustomSecret"
+        # -- Annotations to be added to secret. Annotations are added only when secret is being created. Existing secret will not be modified.
+        # -- switch to false to prevent checksum annotations being maintained and propogated to the pods
+        hashSumEnabled: false
+
+      # -- Configure ingress
+      ingress:
+        # -- Configure ingress for the proxy port.
+        public:
+          # -- En-/Disable the proxy ingress.
+          enabled: true
+          annotations:
+            kubernetes.io/ingress.class: nginx
+            kubernetes.io/tls-acme: "true"
+          hosts:
+            - host: "hydra.soal.one"
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+              tls:
+                hosts:
+                  - hydra.soal.one
+                secretName: hydra-proxy-tls
+
+        admin:
+          # -- En-/Disable the api ingress.
+          enabled: false
+          annotations:
+            kubernetes.io/ingress.class: nginx
+            kubernetes.io/tls-acme: "true"
+          hosts:
+            - host: min.hydra.soal.one
+              paths:
+                - path: /
+                  pathType: ImplementationSpecific
+              tls:
+                hosts:
+                  - min.hydra.soal.one
+                  - secretName: hydra-api-tls
+
+      # -- Configure ORY Hydra itself
+      hydra:
+        # -- The ORY Hydra configuration. For a full list of available settings, check:
+        #  https://www.ory.sh/docs/hydra/reference/configuration
+        config:
+          serve:
+            public:
+              port: 4444
+            admin:
+              port: 4445
+            tls:
+              allow_termination_from:
+                - 10.0.0.0/8
+                - 172.16.0.0/12
+                - 192.168.0.0/16
+          # -- The secrets have to be provided as a string slice, example:
+          # system:
+          #   - "OG5XbmxXa3dYeGplQXpQanYxeEFuRUFa"
+          #   - "foo bar 123 456 lorem"
+          #   - "foo bar 123 456 lorem 1"
+          #   - "foo bar 123 456 lorem 2"
+          #   - "foo bar 123 456 lorem 3"
+          secrets: {}
+
+          urls:
+            self:
+              issuer: https://hydra.soal.one
+              public: https://hydra.soal.one
+
+          # -- Enables database migration
+        automigration:
+          enabled: true
+          # -- Configure the way to execute database migration. Possible values: job, initContainer
+          # When set to job, the migration will be executed as a job on release or upgrade.
+          # When set to initContainer, the migration will be executed when kratos pod is created
+          # Defaults to job
+          type: job
+          # -- Ability to override the entrypoint of the automigration container
+          # (e.g. to source dynamic secrets or export environment dynamic variables)
+          customCommand: []
+          # -- Ability to override arguments of the entrypoint. Can be used in-depended of customCommand
+          # eg:
+          # - sleep 5;
+          #   - kratos
+          customArgs: []
+          # -- resource requests and limits for the automigration initcontainer
+          resources: {}
+
+        # -- Enable dev mode, not secure in production environments
+        dev: false
+
+      deployment:
+        # -- We usually recommend not to specify default resources and to leave this as a conscious choice for the user.
+        #  This also increases chances charts run on environments with little
+        #  resources, such as Minikube. If you do want to specify resources, uncomment the following
+        #  lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        resources: {}
+        ## -- initContainer securityContext for hydra & migration init
+        initContainerSecurityContext: {}
+
+        ## -- pod securityContext for hydra & migration init
+        podSecurityContext: {}
+
+        ## -- container securityContext for hydra & migration init
+        securityContext:
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 100
+          allowPrivilegeEscalation: false
+          privileged: false
+
+        lifecycle: {}
+
+        # -- Set custom deployment level labels
+        labels: {}
+
+        # -- Set custom deployment level annotations
+        annotations: {}
+
+        # -- Specify pod metadata, this metadata is added directly to the pod, and not higher objects
+        podMetadata:
+          # -- Extra pod level labels
+          labels: {}
+          # -- Extra pod level annotations
