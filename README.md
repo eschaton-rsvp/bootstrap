@@ -36,6 +36,7 @@ make add-do-token-secret
 ```
 
 ## TODO
+- Automate generation of ssh key, addition of ssh key to github
 - Update staging infra-level workloads
 - How can we use cue here...
 - Add metrics-server dummy

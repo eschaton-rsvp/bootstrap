@@ -16,7 +16,7 @@ argo-password: ## Get the initial password for argocd
 
 .PHONY: argo-add-config-repo
 argo-add-config-repo: ## Add config repo and ssh key
-	 argocd repo add git@github.com:soal-one/soal-one-bootstrap --ssh-private-key-path ~/.ssh/id_ed25519_soalone_staging
+	 argocd repo add git@github.com:eschaton-rsvp/bootstrap --ssh-private-key-path ~/.ssh/id_ed25519_eschaton_rsvp_staging
 
 .PHONY: add-do-token-secret
 add-do-token-secret: ## Add the DigitalOcean token used by External dns

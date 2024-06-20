@@ -31,7 +31,7 @@ metadata:
 spec:
   project: staging
   source:
-    repoURL: git@github.com:soal-one/soal-one-bootstrap
+    repoURL: git@github.com:eschaton-rsvp/bootstrap
     targetRevision: HEAD
     path: staging
   destination:
